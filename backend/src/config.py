@@ -9,7 +9,7 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "sqlite:///./biochain.db"
+    database_url: str = "sqlite:////tmp/biochain.db"
 
     # Security / JWT
     secret_key: str = "change-this-in-production"
