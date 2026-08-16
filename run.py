@@ -4,6 +4,7 @@ import subprocess
 import time
 import webbrowser
 from pathlib import Path
+import traceback
 
 def print_step(msg):
     print(f"\n{'='*50}\n🚀 {msg}\n{'='*50}")
@@ -21,8 +22,11 @@ def main():
         subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
                        cwd=backend_dir, check=True)
     except subprocess.CalledProcessError:
-        print("❌ Gagal menginstal dependensi backend. Pastikan Python terinstal dengan benar.")
-        sys.exit(1)
+        print("❌ Gagal menginstal dependensi backend. Pastikan requirements.txt ada dan valid.")
+        return
+    except FileNotFoundError:
+        print("❌ Python tidak ditemukan.")
+        return
         
     # 2. Setup SQLite Database
     print_step("Inisialisasi Database SQLite & Seed Data...")
@@ -33,18 +37,20 @@ def main():
                        cwd=backend_dir, env=env_vars, check=True)
     except subprocess.CalledProcessError:
         print("❌ Gagal inisialisasi database.")
-        sys.exit(1)
+        return
         
     # 3. Check / Install Frontend Dependencies
     print_step("Memeriksa dependensi Node.js (Frontend)...")
     try:
-        # Check if node_modules exists, if not install
         if not (frontend_dir / "node_modules").exists():
             print("Menginstal package NPM (mungkin butuh beberapa saat)...")
             subprocess.run(["npm", "install"], cwd=frontend_dir, check=True, shell=True)
     except subprocess.CalledProcessError:
-        print("❌ Gagal menginstal dependensi NPM. Pastikan Node.js terinstal.")
-        sys.exit(1)
+        print("❌ Gagal menginstal dependensi NPM. Pastikan koneksi internet stabil.")
+        return
+    except FileNotFoundError:
+        print("❌ NPM tidak ditemukan. Pastikan Node.js sudah diinstal dari nodejs.org.")
+        return
         
     # 4. Start Servers
     print_step("Menyalakan Server Backend & Frontend...")
@@ -57,11 +63,16 @@ def main():
     )
     
     # Frontend Server (Vite)
-    frontend_process = subprocess.Popen(
-        ["npm", "run", "dev"],
-        cwd=frontend_dir,
-        shell=True
-    )
+    try:
+        frontend_process = subprocess.Popen(
+            ["npm", "run", "dev"],
+            cwd=frontend_dir,
+            shell=True
+        )
+    except FileNotFoundError:
+         print("❌ NPM tidak ditemukan. Gagal menjalankan frontend.")
+         backend_process.terminate()
+         return
     
     # Buka browser
     def open_browser():
@@ -85,4 +96,11 @@ def main():
         print("✅ Berhasil dihentikan.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print("\n❌ Terjadi kesalahan tak terduga:")
+        traceback.print_exc()
+    finally:
+        # Pause before closing window on double click
+        input("\nTekan Enter untuk menutup layar ini...")
