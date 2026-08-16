@@ -2,6 +2,6 @@
   "name": "biochain-root",
   "private": true,
   "scripts": {
-    "vercel-build": "npm --prefix frontend install && npm --prefix frontend run build"
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && cp -r frontend/dist dist || xcopy /E /I frontend\\dist dist"
   }
 }
