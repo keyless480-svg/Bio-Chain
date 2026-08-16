@@ -42,10 +42,16 @@ class Settings(BaseSettings):
 
     # Environment
     environment: str = "development"
+    
+    # Missing fields from .env
+    carbon_tax_default: float = 0.03
+    backend_url: str = "http://localhost:8000"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"
+    }
 
 
 @lru_cache()
