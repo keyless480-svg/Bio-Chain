@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
-import { Leaf, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Leaf, Lock, User, Eye, EyeOff, Settings } from 'lucide-react'
 
 const ROLES = [
   { key: 'analyst',   icon: '📊', title: 'Analis / Pemerintah', desc: 'ESDM, Kementan, Investor', demo: { u: 'analis_esdm', p: 'biochain2026' } },
@@ -27,6 +27,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [customApiUrl, setCustomApiUrl] = useState(localStorage.getItem('custom_api_url') || '')
+
+  const handleSaveApiUrl = () => {
+    localStorage.setItem('custom_api_url', customApiUrl)
+    toast.success('Backend URL tersimpan! Memuat ulang...')
+    setTimeout(() => window.location.reload(), 1000)
+  }
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role)
@@ -58,6 +66,15 @@ export default function LoginPage() {
         background: 'radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%)',
         bottom: -150, left: -100,
       }} />
+
+      {/* Settings Gear */}
+      <button 
+        onClick={() => setShowSettings(!showSettings)}
+        style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-gray-400)', zIndex: 10 }}
+        title="Pengaturan Koneksi Backend"
+      >
+        <Settings size={24} />
+      </button>
 
       <div className="login-card">
         {/* Brand */}
@@ -173,6 +190,25 @@ export default function LoginPage() {
             Greenovate Challenge 2026 • BioChain-Opt v1.0
           </p>
         </div>
+
+        {showSettings && (
+          <div style={{ marginTop: 20, padding: 15, background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <p style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: 8, color: '#334155' }}>🔧 Kustomisasi URL Backend (Cloudflare/Ngrok)</p>
+            <input 
+              type="text" 
+              value={customApiUrl}
+              onChange={(e) => setCustomApiUrl(e.target.value)}
+              placeholder="https://xxxxx.trycloudflare.com"
+              style={{ width: '100%', padding: '8px', fontSize: '12px', borderRadius: 4, border: '1px solid #cbd5e1', marginBottom: 8 }}
+            />
+            <button onClick={handleSaveApiUrl} style={{ width: '100%', padding: '8px', background: '#334155', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: '12px' }}>
+              Simpan & Muat Ulang
+            </button>
+            <p style={{ fontSize: '10px', color: '#64748b', marginTop: 8 }}>
+              Gunakan fitur ini jika Vercel tidak bisa terhubung. Paste URL dari Cloudflare Tunnel di laptop Anda.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

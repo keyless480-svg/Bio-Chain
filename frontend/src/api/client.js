@@ -1,7 +1,13 @@
 // api/client.js — Axios instance with JWT interceptors
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+// Get custom API URL from localStorage (if set by user via settings gear)
+const customApi = localStorage.getItem('custom_api_url')
+
+// Default fallback to Vercel API, or Vite proxy (empty string)
+// If customApi is set, use it. Otherwise, if Vercel, use /api. Otherwise empty string.
+const isVercel = window.location.hostname.includes('vercel.app')
+export const API_BASE = customApi ? customApi : (isVercel ? '/api' : '')
 
 const client = axios.create({
   baseURL: API_BASE,
