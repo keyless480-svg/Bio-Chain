@@ -57,7 +57,7 @@ def main():
     
     # Backend Server (FastAPI)
     backend_process = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8000"],
+        [sys.executable, "-m", "uvicorn", "src.main:app", "--port", "8000", "--reload"],
         cwd=backend_dir,
         env=env_vars
     )
