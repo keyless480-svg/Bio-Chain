@@ -15,7 +15,7 @@ const DEFAULT_PARAMS = {
   biorefinery_capacity_ton_day: 500,
   emission_limit_ton_co2: null,
   max_budget_usd: null,
-  solver_name: 'cbc',
+  solver_name: 'appsi_highs',
   time_limit_seconds: 300,
 }
 

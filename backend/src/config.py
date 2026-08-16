@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Optimization
     solver_timeout: int = 300  # seconds
-    milp_solver: str = "cbc"  # or 'glpk'
+    milp_solver: str = "appsi_highs"  # Changed from cbc for Windows compatibility
     carbon_tax_default: float = 0.03  # USD / kg CO2e
 
     # CORS

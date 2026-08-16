@@ -20,7 +20,7 @@ email-validator==2.2.0
 
 # Optimization
 pyomo==6.7.3
-
+highspy==1.15.1
 
 # Utilities
 numpy==1.26.4
