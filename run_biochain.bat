@@ -7,6 +7,15 @@ echo [+] Memulai BioChain-Opt...
 echo ========================================================
 
 echo Menjalankan Backend FastAPI...
+if not exist "backend\venv\Scripts\activate.bat" (
+    echo [!] Virtual environment (venv) tidak ditemukan!
+    echo [!] Sedang membuat venv dan menginstall dependencies secara otomatis...
+    cd backend
+    python -m venv venv
+    call venv\Scripts\activate
+    pip install -r requirements.txt
+    cd ..
+)
 start cmd /k "cd backend && call venv\Scripts\activate && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo Menunggu Backend siap...
