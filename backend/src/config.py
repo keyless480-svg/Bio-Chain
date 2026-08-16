@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     carbon_tax_default: float = 0.03  # USD / kg CO2e
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:80"]
+    cors_origins: list[str] = ["*"]
 
     # Environment
     environment: str = "development"
