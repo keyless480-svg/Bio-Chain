@@ -55,7 +55,7 @@ def main():
         return
         
     # 4. Start Servers
-    print_step("Menyalakan Server Backend & Frontend...")
+    print_step("Menyalakan Server Backend, Frontend & Tunnel Publik...")
     
     # Backend Server (FastAPI)
     backend_process = subprocess.Popen(
@@ -71,8 +71,15 @@ def main():
             cwd=frontend_dir,
             shell=True
         )
+        
+        # Tunnel Server (Localtunnel) untuk integrasi Vercel
+        tunnel_process = subprocess.Popen(
+            ["npx", "localtunnel", "--port", "8000", "--subdomain", "biochain-opt-backend"],
+            cwd=root_dir,
+            shell=True
+        )
     except FileNotFoundError:
-         print("❌ NPM tidak ditemukan. Gagal menjalankan frontend.")
+         print("❌ NPM tidak ditemukan. Gagal menjalankan frontend & tunnel.")
          backend_process.terminate()
          return
     
@@ -91,10 +98,12 @@ def main():
         # Tahan script utama agar server tetap berjalan
         backend_process.wait()
         frontend_process.wait()
+        tunnel_process.wait()
     except KeyboardInterrupt:
         print("\n🛑 Menghentikan BioChain-Opt...")
         backend_process.terminate()
         frontend_process.terminate()
+        tunnel_process.terminate()
         print("✅ Berhasil dihentikan.")
 
 if __name__ == "__main__":

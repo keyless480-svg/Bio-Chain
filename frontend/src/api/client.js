@@ -1,12 +1,16 @@
 // api/client.js — Axios instance with JWT interceptors
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+const API_BASE = import.meta.env.VITE_API_URL || 
+  (window.location.hostname.includes('vercel.app') ? 'https://biochain-opt-backend.loca.lt' : '')
 
 const client = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true'
+  },
 })
 
 // Attach JWT token to every request
