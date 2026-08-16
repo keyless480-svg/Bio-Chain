@@ -1,0 +1,42 @@
+{
+  "name": "BioChain-Opt: Rantai Pasok Hijau",
+  "short_name": "BioChain",
+  "description": "Optimasi rantai pasok bioetanol generasi kedua dari tongkol jagung di Jawa Timur",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2E7D32",
+  "background_color": "#FFFFFF",
+  "lang": "id",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Jual Panen Saya",
+      "short_name": "Jual",
+      "url": "/farmer",
+      "description": "Langsung ke halaman penjualan tongkol jagung",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Dashboard Analis",
+      "short_name": "Analis",
+      "url": "/analyst",
+      "description": "Buka dashboard optimasi MILP",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
+}
