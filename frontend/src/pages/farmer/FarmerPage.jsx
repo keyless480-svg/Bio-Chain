@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { MapPin, Package, ChevronRight, ArrowLeft, Check, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { transactionApi } from '../../api/client'
 
 // Simulated nearest KUD data (in real app: computed from GPS + PostGIS)
 const NEAREST_KUDS = [
@@ -32,14 +33,24 @@ export default function FarmerPage() {
     }, 1200)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!weight || parseInt(weight) <= 0) { toast.error('Masukkan jumlah yang valid'); return }
     setLoading(true)
-    setTimeout(() => {
+    try {
+      await transactionApi.createHarvest({
+        farmer_id: user?.id || 1, // Fallback if no user id
+        weight_kg: parseInt(weight),
+        quality_grade: 'A',
+        price_per_kg: CORN_PRICE_TODAY
+      })
       setLoading(false)
       setStep('result')
-      toast.success('Pesanan berhasil dikirim ke KUD!')
-    }, 1000)
+      toast.success('Pesanan berhasil dikirim ke Pengepul!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Gagal mengirim pesanan')
+      setLoading(false)
+    }
   }
 
   return (

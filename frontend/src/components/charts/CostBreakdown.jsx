@@ -1,128 +1,113 @@
-// components/charts/CostBreakdown.jsx — Route cost table + bar chart
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, LabelList,
-} from 'recharts'
-import { Truck, ArrowRight } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { DollarSign, ShieldAlert, Leaf } from 'lucide-react'
 
-const fmt = (n, dec = 2) => n != null ? Number(n).toLocaleString('id-ID', { maximumFractionDigits: dec }) : '—'
+const fmt = (n) => n != null ? Number(n).toLocaleString('id-ID', { maximumFractionDigits: 0 }) : '—'
+const fmtIDR = (n) => n != null ? `Rp ${fmt(n)}` : '—'
 
 export default function CostBreakdown({ result, nodes }) {
-  if (!result?.routes?.length) {
+  if (!result || !nodes) {
     return (
       <div style={{ textAlign: 'center', padding: 'var(--space-16)', color: 'var(--color-gray-400)' }}>
-        <Truck size={48} style={{ margin: '0 auto 12px', display: 'block' }} />
-        <p style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>Belum ada data rute</p>
-        <p style={{ fontSize: 'var(--text-sm)', marginTop: 8 }}>Jalankan optimasi terlebih dahulu</p>
+        <p style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>Jalankan optimasi untuk melihat Rincian Biaya</p>
       </div>
     )
   }
 
-  // Build name lookup from nodes
-  const names = {}
-  nodes?.farms?.forEach(f => { names[`farm_${f.id}`] = f.name })
-  nodes?.hubs?.forEach(h => { names[`hub_${h.id}`] = h.name })
-  nodes?.biorefineries?.forEach(b => { names[`biorefinery_${b.id}`] = b.name })
-
-  const routes = result.routes.sort((a, b) => b.flow_ton_day - a.flow_ton_day)
-
-  // Group by hub for bar chart
-  const hubFlows = {}
-  routes.forEach(r => {
-    if (r.from_type === 'farm') {
-      const key = `hub_${r.to_id}`
-      const name = (names[key] || `Hub ${r.to_id}`).replace('KUD ', '').replace(' Hub — ', '\n')
-      hubFlows[key] = (hubFlows[key] || { name, flow: 0 })
-      hubFlows[key].flow += r.flow_ton_day
+  // Cost Data for Chart
+  const costData = [
+    {
+      name: 'Biaya Dasar Operasional',
+      'Hulu (Petani)': result.harvest_cost_year,
+      'Transport F-H': result.transport_fh_cost_year,
+      'Handling Hub': result.hub_handling_cost_year,
+      'Biaya Susut': result.shrinkage_cost_year,
+      'Transport H-F': result.transport_hf_cost_year,
+      'Pabrikasi': result.factory_cost_year,
+    },
+    {
+      name: 'Penalti Objektif',
+      'Pajak Karbon': result.green_penalty_year,
+      'Risiko Rantai': result.resilience_penalty_year,
+      'Hulu (Petani)': 0,
+      'Transport F-H': 0,
+      'Handling Hub': 0,
+      'Biaya Susut': 0,
+      'Transport H-F': 0,
+      'Pabrikasi': 0,
     }
-  })
-  const chartData = Object.values(hubFlows)
+  ]
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
-      {/* Bar chart: flow per hub */}
+      {/* Objective Function Summary */}
       <div className="card">
-        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-4)', color: 'var(--color-gray-800)' }}>
-          Aliran Tongkol per Hub (ton/hari)
+        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-6)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <DollarSign size={20} color="var(--color-primary-600)" />
+          Struktur Objektif Multi-Kriteria (MILP)
         </h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
-            <XAxis
-              dataKey="name"
-              tick={{ fontSize: 11, fontFamily: 'Inter' }}
-              angle={-30} textAnchor="end" interval={0}
-            />
-            <YAxis tick={{ fontSize: 11, fontFamily: 'Inter' }} />
-            <Tooltip
-              formatter={(v) => [`${fmt(v, 1)} ton/hari`, 'Aliran']}
-              contentStyle={{ fontFamily: 'Inter', fontSize: 13, borderRadius: 10 }}
-            />
-            <Bar dataKey="flow" fill="#4CAF50" radius={[6, 6, 0, 0]}>
-              <LabelList dataKey="flow" position="top" style={{ fontSize: 11, fill: '#2E7D32', fontWeight: 600 }}
-                formatter={v => `${v.toFixed(0)}t`} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
+          <div style={{ background: 'var(--color-gray-50)', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-500)', marginBottom: '4px' }}>Total Biaya Logistik & Ops (Obj 1)</div>
+            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-primary-800)' }}>
+              Rp {fmt((result.harvest_cost_year + result.transport_fh_cost_year + result.hub_handling_cost_year + result.shrinkage_cost_year + result.transport_hf_cost_year + result.factory_cost_year) / 1000000)} Juta
+            </div>
+          </div>
+          
+          <div style={{ background: '#FFEBEE', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: '#C62828', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Leaf size={14} /> Total Pajak Karbon (Obj 2)
+            </div>
+            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: '#B71C1C' }}>
+              Rp {fmt(result.green_penalty_year / 1000000)} Juta
+            </div>
+          </div>
+
+          <div style={{ background: '#FFF3E0', padding: '16px', borderRadius: '8px' }}>
+            <div style={{ fontSize: 'var(--text-sm)', color: '#EF6C00', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldAlert size={14} /> Penalti Risiko (Obj 3)
+            </div>
+            <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: '#E65100' }}>
+              Rp {fmt(result.resilience_penalty_year / 1000000)} Juta
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ marginTop: '24px', padding: '16px', background: 'var(--color-primary-50)', borderRadius: '8px', border: '1px solid var(--color-primary-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary-700)', fontWeight: 600 }}>Total Fungsi Objektif Terminimumkan (Z)</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>Termasuk seluruh biaya dan penalti artifisial</div>
+          </div>
+          <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--color-primary-900)' }}>
+            Rp {fmt(result.objective_value / 1000000)} Jt
+          </div>
+        </div>
       </div>
 
-      {/* Route Detail Table */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: 'var(--space-5) var(--space-6)', borderBottom: '1px solid var(--color-gray-100)' }}>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-gray-800)' }}>
-            Rincian Rute Pengiriman ({routes.length} rute aktif)
-          </h3>
-        </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Dari</th>
-                <th>Tipe</th>
-                <th>Ke</th>
-                <th>Tipe</th>
-                <th style={{ textAlign: 'right' }}>Aliran (ton/hari)</th>
-                <th style={{ textAlign: 'right' }}>Jarak (km)</th>
-                <th style={{ textAlign: 'right' }}>Biaya/hari (USD)</th>
-                <th style={{ textAlign: 'right' }}>Emisi CO₂ (kg/hari)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {routes.map((r, i) => (
-                <tr key={i}>
-                  <td style={{ fontWeight: 500, maxWidth: 160 }}>
-                    <span style={{ fontSize: 'var(--text-xs)', display: 'block' }}>
-                      {(names[`${r.from_type}_${r.from_id}`] || `${r.from_type} #${r.from_id}`)
-                        .replace('Lahan Jagung ', '').replace('KUD ', '')}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${r.from_type === 'farm' ? 'badge-green' : 'badge-yellow'}`}>
-                      {r.from_type === 'farm' ? '🌽 Farm' : '🏭 Hub'}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 500, maxWidth: 160 }}>
-                    <span style={{ fontSize: 'var(--text-xs)', display: 'block' }}>
-                      {(names[`${r.to_type}_${r.to_id}`] || `${r.to_type} #${r.to_id}`)
-                        .replace('KUD ', '').replace('Biorefinery ', '')}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${r.to_type === 'hub' ? 'badge-yellow' : 'badge-brown'}`}>
-                      {r.to_type === 'hub' ? '🏭 Hub' : '⚗️ Pabrik'}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-primary-800)' }}>
-                    {fmt(r.flow_ton_day, 2)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>{fmt(r.distance_km, 1)}</td>
-                  <td style={{ textAlign: 'right', color: '#E65100' }}>${fmt(r.cost_usd_day, 4)}</td>
-                  <td style={{ textAlign: 'right', color: '#1565C0' }}>{fmt(r.emission_kg_co2_day, 3)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="card">
+        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: 'var(--space-6)' }}>
+          Distribusi Biaya ABC per Kategori
+        </h3>
+        <ResponsiveContainer width="100%" height={400}>
+          <BarChart data={costData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" />
+            <YAxis tickFormatter={(val) => `Rp${fmt(val / 1000000)}Jt`} />
+            <Tooltip
+              formatter={(val) => `Rp ${fmt(val / 1000000)} Juta`}
+              contentStyle={{ borderRadius: '8px', fontFamily: 'Inter' }}
+            />
+            <Legend />
+            <Bar dataKey="Hulu (Petani)" stackId="a" fill="#8D6E63" />
+            <Bar dataKey="Transport F-H" stackId="a" fill="#FFB300" />
+            <Bar dataKey="Handling Hub" stackId="a" fill="#FB8C00" />
+            <Bar dataKey="Biaya Susut" stackId="a" fill="#039BE5" />
+            <Bar dataKey="Transport H-F" stackId="a" fill="#43A047" />
+            <Bar dataKey="Pabrikasi" stackId="a" fill="#1E88E5" />
+            <Bar dataKey="Pajak Karbon" stackId="a" fill="#E53935" />
+            <Bar dataKey="Risiko Rantai" stackId="a" fill="#8E24AA" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   )

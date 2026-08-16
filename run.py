@@ -33,6 +33,8 @@ def main():
     env_vars = os.environ.copy()
     env_vars["PYTHONPATH"] = str(backend_dir)
     try:
+        subprocess.run([sys.executable, "src/drop_tables.py"], 
+                       cwd=backend_dir, env=env_vars, check=True)
         subprocess.run([sys.executable, "src/seed/seed_data.py"], 
                        cwd=backend_dir, env=env_vars, check=True)
     except subprocess.CalledProcessError:

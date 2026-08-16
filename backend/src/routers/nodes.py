@@ -1,12 +1,11 @@
 """
 routers/nodes.py — Spatial node data endpoints.
-GET /api/v1/nodes — Returns all farms, hubs, biorefineries as GeoJSON.
 """
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models.spatial import Farm, Hub, Biorefinery
+from src.models.spatial import Farmer, Hub, Factory
 from src.schemas.nodes import (
     AllNodesResponse, FarmResponse, HubResponse,
     BiorefineryResponse, NodeCollection, NodeFeature,
@@ -22,21 +21,16 @@ def get_all_nodes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Return all supply chain nodes with coordinates (requires authentication)."""
-    farms_db = db.query(Farm).all()
+    """Return all supply chain nodes with coordinates."""
+    farms_db = db.query(Farmer).all()
     hubs_db = db.query(Hub).filter(Hub.is_active == True).all()
-    bios_db = db.query(Biorefinery).all()
+    bios_db = db.query(Factory).all()
 
     features = []
+    
     farms_out = []
     for f in farms_db:
-        farms_out.append(FarmResponse(
-            id=f.id, name=f.name, kabupaten=f.kabupaten,
-            latitude=f.latitude, longitude=f.longitude,
-            annual_supply_ton=f.annual_supply_ton,
-            daily_supply_ton=f.daily_supply_ton,
-            corn_area_ha=f.corn_area_ha,
-        ))
+        farms_out.append(FarmResponse.model_validate(f))
         features.append(NodeFeature(
             geometry={"type": "Point", "coordinates": [f.longitude, f.latitude]},
             properties={"id": f.id, "type": "farm", "name": f.name,
@@ -45,14 +39,7 @@ def get_all_nodes(
 
     hubs_out = []
     for h in hubs_db:
-        hubs_out.append(HubResponse(
-            id=h.id, name=h.name, kabupaten=h.kabupaten,
-            latitude=h.latitude, longitude=h.longitude,
-            max_capacity_ton_day=h.max_capacity_ton_day,
-            current_load_ton=h.current_load_ton,
-            is_active=h.is_active,
-            operating_cost_usd_day=h.operating_cost_usd_day,
-        ))
+        hubs_out.append(HubResponse.model_validate(h))
         features.append(NodeFeature(
             geometry={"type": "Point", "coordinates": [h.longitude, h.latitude]},
             properties={"id": h.id, "type": "hub", "name": h.name,
@@ -61,13 +48,7 @@ def get_all_nodes(
 
     bios_out = []
     for b in bios_db:
-        bios_out.append(BiorefineryResponse(
-            id=b.id, name=b.name, kabupaten=b.kabupaten,
-            latitude=b.latitude, longitude=b.longitude,
-            max_capacity_ton_day=b.max_capacity_ton_day,
-            ethanol_yield_liter_per_ton=b.ethanol_yield_liter_per_ton,
-            investment_cost_usd=b.investment_cost_usd,
-        ))
+        bios_out.append(BiorefineryResponse.model_validate(b))
         features.append(NodeFeature(
             geometry={"type": "Point", "coordinates": [b.longitude, b.latitude]},
             properties={"id": b.id, "type": "biorefinery", "name": b.name,

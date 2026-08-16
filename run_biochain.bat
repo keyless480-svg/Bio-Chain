@@ -1,10 +1,10 @@
 @echo off
 color 0A
-title BioChain-Opt Launcher (Python 3.12)
+title BioChain-Opt Launcher
 echo ========================================================
-echo [+] Memulai BioChain-Opt menggunakan Python 3.12...
+echo [+] Memulai BioChain-Opt...
 echo ========================================================
-py -3.12 run.py
+"C:\Users\DELL\AppData\Local\Programs\Python\Python312\python.exe" run.py
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [!] Terjadi kesalahan saat menjalankan aplikasi.

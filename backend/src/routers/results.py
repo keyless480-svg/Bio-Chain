@@ -15,7 +15,6 @@ from src.models.spatial import User
 
 router = APIRouter(prefix="/api/v1/results", tags=["results"])
 
-
 @router.get("/{task_id}", response_model=TaskResultResponse)
 def get_task_result(
     task_id: str,
@@ -33,14 +32,16 @@ def get_task_result(
         created_at=task.created_at,
         updated_at=task.updated_at,
         result=task.result_json if task.status == "completed" else None,
-        total_annual_cost_usd=task.total_annual_cost_usd,
+        total_annual_cost=task.total_annual_cost,
         total_emission_ton_co2=task.total_emission_ton_co2,
-        mesp_usd_per_liter=task.mesp_usd_per_liter,
+        hpp_per_kg=task.hpp_per_kg,
+        hpp_per_liter_ethanol=task.hpp_per_liter_ethanol,
+        fair_trade_margin_pct=task.fair_trade_margin_pct,
+        buffer_stock_avg_pct=task.buffer_stock_avg_pct,
         solve_time_seconds=task.solve_time_seconds,
         solver_status=task.solver_status,
         error_message=task.error_message,
     )
-
 
 @router.get("", response_model=List[TaskResultResponse])
 def list_tasks(
@@ -64,9 +65,12 @@ def list_tasks(
             status=t.status,
             created_at=t.created_at,
             updated_at=t.updated_at,
-            total_annual_cost_usd=t.total_annual_cost_usd,
+            total_annual_cost=t.total_annual_cost,
             total_emission_ton_co2=t.total_emission_ton_co2,
-            mesp_usd_per_liter=t.mesp_usd_per_liter,
+            hpp_per_kg=t.hpp_per_kg,
+            hpp_per_liter_ethanol=t.hpp_per_liter_ethanol,
+            fair_trade_margin_pct=t.fair_trade_margin_pct,
+            buffer_stock_avg_pct=t.buffer_stock_avg_pct,
             solve_time_seconds=t.solve_time_seconds,
             solver_status=t.solver_status,
             error_message=t.error_message,

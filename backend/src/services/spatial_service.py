@@ -1,35 +1,19 @@
 """
 services/spatial_service.py — Spatial computation utilities.
-Computes distance matrices between supply chain nodes using GeoPandas/Shapely.
-Uses Euclidean approximation (road distance factor applied as multiplier).
+Computes distance, transport costs (BBM+tol+supir), emissions.
+All costs in IDR (Rupiah).
 """
 import math
 from typing import List, Dict, Tuple
-import numpy as np
 
+from src.config import get_settings
 
-# Road distance factor: straight-line distance * 1.4 ≈ road distance in Jawa Timur
-ROAD_FACTOR = 1.4
-
-# Truck fuel consumption: liters per km
-TRUCK_FUEL_LITERS_PER_KM = 0.35
-
-# Diesel price: USD per liter (approx Pertamina Dex retail)
-DIESEL_PRICE_USD_PER_LITER = 0.68
-
-# Truck payload: tons
-TRUCK_PAYLOAD_TON = 20.0
-
-# CO2 emission factor for diesel truck: kg CO2 per liter fuel
-CO2_PER_LITER_DIESEL = 2.68
+settings = get_settings()
 
 
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Calculate great-circle distance between two points (Haversine formula).
-    Returns distance in kilometers.
-    """
-    R = 6371.0  # Earth radius in km
+    """Great-circle distance between two points (km)."""
+    R = 6371.0
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
@@ -38,45 +22,62 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def road_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """
-    Estimate road distance using Haversine × road factor.
-    For production, replace with OSRM/Valhalla routing API.
-    """
-    return haversine_km(lat1, lon1, lat2, lon2) * ROAD_FACTOR
+    """Estimate road distance using Haversine x road factor."""
+    return haversine_km(lat1, lon1, lat2, lon2) * settings.road_factor
 
 
-def transport_cost_usd_per_ton(distance_km: float) -> float:
-    """
-    Calculate transport cost per ton of corncob for a given distance.
-    Formula: (distance_km × fuel_per_km × diesel_price) / payload_ton
-    """
-    fuel_cost_per_trip = distance_km * TRUCK_FUEL_LITERS_PER_KM * DIESEL_PRICE_USD_PER_LITER
-    return fuel_cost_per_trip / TRUCK_PAYLOAD_TON
+def fuel_cost_per_trip(distance_km: float) -> float:
+    """BBM cost for one truck trip (IDR)."""
+    return distance_km * settings.truck_fuel_per_km * settings.diesel_price_per_liter
+
+
+def toll_cost_per_trip(distance_km: float) -> float:
+    """Estimated toll cost (IDR)."""
+    return distance_km * settings.toll_cost_per_km
+
+
+def driver_cost_per_trip() -> float:
+    """Driver wages + meal allowance per trip (IDR)."""
+    return settings.driver_cost_per_trip
+
+
+def carbon_emission_kg(distance_km: float) -> float:
+    """CO2 emission for one truck trip (kg CO2)."""
+    return distance_km * settings.truck_fuel_per_km * settings.co2_per_liter_diesel
+
+
+def transport_cost_per_ton(distance_km: float) -> float:
+    """Total transport cost per ton of cargo (IDR/ton)."""
+    total_trip = fuel_cost_per_trip(distance_km) + toll_cost_per_trip(distance_km) + driver_cost_per_trip()
+    return total_trip / settings.truck_capacity_ton
 
 
 def emission_kg_co2_per_ton(distance_km: float) -> float:
-    """
-    Calculate CO2 emission per ton of cargo for a given road distance.
-    Formula: (distance_km × fuel_per_km × CO2_per_liter) / payload_ton
-    """
-    emission_per_trip = distance_km * TRUCK_FUEL_LITERS_PER_KM * CO2_PER_LITER_DIESEL
-    return emission_per_trip / TRUCK_PAYLOAD_TON
+    """CO2 emission per ton of cargo (kg CO2/ton)."""
+    return carbon_emission_kg(distance_km) / settings.truck_capacity_ton
 
 
-def build_distance_matrix(
-    origins: List[Dict],  # [{"id": int, "lat": float, "lon": float}]
-    destinations: List[Dict],
-) -> Dict[Tuple[int, int], float]:
-    """
-    Build a full distance matrix (km) between origin and destination nodes.
-    Returns dict keyed by (origin_id, destination_id).
-    """
-    matrix: Dict[Tuple[int, int], float] = {}
-    for o in origins:
-        for d in destinations:
-            dist = road_distance_km(o["lat"], o["lon"], d["lat"], d["lon"])
-            matrix[(o["id"], d["id"])] = dist
-    return matrix
+def full_transport_breakdown(distance_km: float) -> Dict[str, float]:
+    """Full breakdown of transport costs for a trip."""
+    fuel = fuel_cost_per_trip(distance_km)
+    toll = toll_cost_per_trip(distance_km)
+    driver = driver_cost_per_trip()
+    emission = carbon_emission_kg(distance_km)
+    carbon_tax = emission * settings.lambda_green
+    return {
+        "fuel_cost": fuel,
+        "toll_cost": toll,
+        "driver_cost": driver,
+        "total_transport": fuel + toll + driver,
+        "carbon_emitted_kg": emission,
+        "carbon_tax_cost": carbon_tax,
+    }
+
+
+def check_truck_utilization(payload_ton: float) -> Tuple[bool, float]:
+    """Check if truck utilization >= 95%. Returns (is_ok, utilization_pct)."""
+    util = payload_ton / settings.truck_capacity_ton
+    return util >= settings.truck_min_utilization_pct, round(util * 100, 1)
 
 
 def build_cost_matrix(
@@ -84,16 +85,26 @@ def build_cost_matrix(
     destinations: List[Dict],
 ) -> Tuple[Dict[Tuple[int, int], float], Dict[Tuple[int, int], float]]:
     """
-    Build transport cost (USD/ton) and emission (kg CO2/ton) matrices.
+    Build transport cost (IDR/ton) and emission (kg CO2/ton) matrices.
     Returns (cost_matrix, emission_matrix).
     """
-    cost_matrix: Dict[Tuple[int, int], float] = {}
-    emission_matrix: Dict[Tuple[int, int], float] = {}
-
+    cost_matrix = {}
+    emission_matrix = {}
     for o in origins:
         for d in destinations:
             dist = road_distance_km(o["lat"], o["lon"], d["lat"], d["lon"])
-            cost_matrix[(o["id"], d["id"])] = transport_cost_usd_per_ton(dist)
+            cost_matrix[(o["id"], d["id"])] = transport_cost_per_ton(dist)
             emission_matrix[(o["id"], d["id"])] = emission_kg_co2_per_ton(dist)
-
     return cost_matrix, emission_matrix
+
+
+def build_distance_matrix(
+    origins: List[Dict],
+    destinations: List[Dict],
+) -> Dict[Tuple[int, int], float]:
+    """Build distance matrix (km)."""
+    matrix = {}
+    for o in origins:
+        for d in destinations:
+            matrix[(o["id"], d["id"])] = road_distance_km(o["lat"], o["lon"], d["lat"], d["lon"])
+    return matrix

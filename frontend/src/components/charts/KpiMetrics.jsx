@@ -3,10 +3,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts'
-import { TrendingDown, Leaf, Package, DollarSign, Zap, Truck } from 'lucide-react'
+import { TrendingDown, Leaf, Package, DollarSign, Zap, Truck, ShieldAlert, CheckCircle, Droplets } from 'lucide-react'
 
 const fmt = (n, dec = 2) => n != null ? Number(n).toLocaleString('id-ID', { maximumFractionDigits: dec }) : '—'
-const fmtUSD = (n) => n != null ? `$${fmt(n)}` : '—'
+const fmtIDR = (n) => n != null ? `Rp ${fmt(n)}` : '—'
 
 function KpiCard({ icon: Icon, label, value, unit, color = 'var(--color-primary-800)', accent }) {
   return (
@@ -38,9 +38,14 @@ export default function KpiMetrics({ result }) {
   }
 
   const costBreakdown = [
-    { name: 'Transportasi', value: result.transport_cost_usd_year || 0, color: '#4CAF50' },
-    { name: 'Operasional Hub', value: result.hub_operating_cost_usd_year || 0, color: '#FFC107' },
-    { name: 'Pajak Karbon', value: result.carbon_tax_cost_usd_year || 0, color: '#EF5350' },
+    { name: 'Hulu (Petani)', value: result.harvest_cost_year || 0, color: '#8D6E63' },
+    { name: 'Transport Pengepul', value: result.transport_fh_cost_year || 0, color: '#FFB300' },
+    { name: 'Pengepul (Handling)', value: result.hub_handling_cost_year || 0, color: '#FB8C00' },
+    { name: 'Penyusutan (Shrinkage)', value: result.shrinkage_cost_year || 0, color: '#039BE5' },
+    { name: 'Transport FTL', value: result.transport_hf_cost_year || 0, color: '#43A047' },
+    { name: 'Pabrikasi', value: result.factory_cost_year || 0, color: '#1E88E5' },
+    { name: 'Pajak Karbon', value: result.green_penalty_year || 0, color: '#E53935' },
+    { name: 'Penalti Risiko', value: result.resilience_penalty_year || 0, color: '#8E24AA' },
   ]
 
   const statusColor = result.status === 'optimal' ? 'var(--color-success)' : 'var(--color-warning)'
@@ -62,28 +67,42 @@ export default function KpiMetrics({ result }) {
             {result.status === 'optimal' ? '✅ Solusi Optimal Ditemukan' : '⚡ Solusi Feasible (Batas Waktu)'}
           </p>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-600)', marginTop: 2 }}>
-            Hub aktif: <b>{result.open_hubs?.length || 0}</b> dari total kandidat •
+            Hub aktif: <b>{result.active_hubs?.length || 0}</b> dari total kandidat •
             Solver: {result.solver_status} •
             Waktu: {result.solve_time_seconds?.toFixed(1)}s
           </p>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>MESP</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>HPP (Cost of Goods)</div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--color-primary-800)' }}>
-            ${result.mesp_usd_per_liter?.toFixed(4)}
+            Rp {fmt(result.hpp_per_kg, 0)}
           </div>
-          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>per liter etanol</div>
+          <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-gray-500)' }}>per kg tongkol</div>
         </div>
       </div>
 
       {/* KPI Cards Grid */}
       <div className="kpi-grid">
         <KpiCard
-          icon={DollarSign}
-          label="Total Biaya Tahunan (TAC)"
-          value={fmtUSD(result.total_annual_cost_usd)}
-          unit="USD / tahun"
-          color="var(--color-primary-800)"
+          icon={CheckCircle}
+          label="Margin Fair Trade (Petani)"
+          value={`${fmt(result.fair_trade_margin_pct, 1)}%`}
+          unit="% dari total biaya"
+          color="#388E3C"
+        />
+        <KpiCard
+          icon={Droplets}
+          label="Kehilangan Susut (Shrinkage)"
+          value={fmt(result.total_shrinkage_ton_year, 1)}
+          unit="ton air menguap / thn"
+          color="#1976D2"
+        />
+        <KpiCard
+          icon={ShieldAlert}
+          label="Rata-rata Buffer Stock"
+          value={`${fmt(result.buffer_stock_avg_pct, 1)}%`}
+          unit="% dari kiriman harian"
+          color="#FBC02D"
         />
         <KpiCard
           icon={Leaf}
@@ -93,44 +112,30 @@ export default function KpiMetrics({ result }) {
           color="#1565C0"
         />
         <KpiCard
-          icon={Package}
-          label="Tongkol Jagung Terangkut"
-          value={fmt(result.total_corncob_ton_day, 1)}
-          unit="ton / hari"
-          color="var(--color-secondary-700)"
-        />
-        <KpiCard
           icon={Zap}
-          label="Produksi Bioetanol"
+          label="Estimasi Etanol"
           value={fmt(result.total_ethanol_liter_year / 1000000, 2)}
           unit="juta liter / tahun"
           color="#7B1FA2"
         />
         <KpiCard
-          icon={Truck}
-          label="Biaya Transportasi"
-          value={fmtUSD(result.transport_cost_usd_year)}
-          unit="USD / tahun"
-          color="#E65100"
-        />
-        <KpiCard
-          icon={TrendingDown}
-          label="Harga Jual Min. Etanol (MESP)"
-          value={`$${result.mesp_usd_per_liter?.toFixed(4)}`}
-          unit="USD / liter"
-          color="#00695C"
+          icon={DollarSign}
+          label="Total Biaya (TAC)"
+          value={fmtIDR(result.total_annual_cost / 1000000)}
+          unit="Juta Rupiah / tahun"
+          color="var(--color-primary-800)"
         />
       </div>
 
       {/* Cost Breakdown Pie Chart */}
       <div className="card">
         <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, marginBottom: 'var(--space-4)', color: 'var(--color-gray-800)' }}>
-          Komposisi Biaya Tahunan
+          Komposisi Biaya ABC (Activity-Based Costing) Tahunan
         </h3>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <Pie
-              data={costBreakdown}
+              data={costBreakdown.filter(d => d.value > 0)}
               cx="50%" cy="50%"
               outerRadius={100}
               innerRadius={55}
@@ -139,12 +144,12 @@ export default function KpiMetrics({ result }) {
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(1)}%`}
               labelLine={true}
             >
-              {costBreakdown.map((entry, i) => (
+              {costBreakdown.filter(d => d.value > 0).map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}
             </Pie>
             <Tooltip
-              formatter={(v) => [`$${fmt(v)}`, 'Biaya']}
+              formatter={(v) => [`Rp ${fmt(v / 1000000, 0)} Juta`, 'Biaya']}
               contentStyle={{ fontFamily: 'Inter', fontSize: 13, borderRadius: 10 }}
             />
             <Legend />

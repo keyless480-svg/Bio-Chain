@@ -47,8 +47,23 @@ export const nodesApi = {
 
 export const optimizeApi = {
   start: (params) => client.post('/api/v1/optimize', params),
+  getStatus: (taskId) => client.get(`/api/v1/optimize/status/${taskId}`),
   getResult: (taskId) => client.get(`/api/v1/results/${taskId}`),
   listResults: () => client.get('/api/v1/results'),
+}
+
+export const transactionApi = {
+  // Harvests
+  createHarvest: (data) => client.post('/api/v1/transactions/harvests', data),
+  getHarvests: () => client.get('/api/v1/transactions/harvests'),
+  // Hub Batches
+  createHubBatch: (data) => client.post('/api/v1/transactions/hub-batches', data),
+  getHubBatches: () => client.get('/api/v1/transactions/hub-batches'),
+  // Shipments
+  createShipment: (data) => client.post('/api/v1/transactions/shipments', data),
+  getShipments: () => client.get('/api/v1/transactions/shipments'),
+  // Daily Summary
+  getDailySummary: () => client.get('/api/v1/transactions/daily-summary'),
 }
 
 export default client

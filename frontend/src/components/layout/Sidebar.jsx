@@ -3,14 +3,16 @@ import { useState } from 'react'
 import {
   Map, BarChart2, Activity, Settings, Leaf,
   DollarSign, Wind, Zap, Play, RotateCcw,
-  ChevronRight
+  ChevronRight, Recycle
 } from 'lucide-react'
 
 export default function Sidebar({ activeTab, onTabChange, onRunOptimization, isRunning, params, onParamsChange }) {
   const tabs = [
+    { key: 'circular', label: 'Alur Sirkular', icon: Recycle },
     { key: 'map', label: 'Peta Spasial', icon: Map },
-    { key: 'costs', label: 'Rincian Biaya', icon: BarChart2 },
+    { key: 'costs', label: 'Biaya ABC', icon: BarChart2 },
     { key: 'kpi', label: 'Metrik KPI', icon: Activity },
+    { key: 'transactions', label: 'Transaksi', icon: Settings },
   ]
 
   return (
@@ -53,23 +55,43 @@ export default function Sidebar({ activeTab, onTabChange, onRunOptimization, isR
           PARAMETER SKENARIO
         </p>
 
-        {/* Carbon Tax Slider */}
+        {/* Lambda Green */}
         <div className="input-group" style={{ marginBottom: 'var(--space-5)' }}>
           <label style={{ color: 'rgba(255,255,255,0.85)', fontSize: 'var(--text-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Wind size={14} /> Pajak Karbon
+            <Wind size={14} /> Pajak Karbon (Green Penalty)
           </label>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', opacity: 0.7, marginBottom: 4 }}>
-            <span>$0.00</span>
+            <span>Rp 0</span>
             <span style={{ fontWeight: 700, color: 'var(--color-accent-400)', fontSize: 'var(--text-sm)' }}>
-              ${params.carbon_tax_usd_per_kg.toFixed(3)}/kg CO₂
+              Rp {params.lambda_green || 465}/kg
             </span>
-            <span>$0.20</span>
+            <span>Rp 1.000</span>
           </div>
           <input
             type="range" className="slider"
-            min={0} max={0.20} step={0.001}
-            value={params.carbon_tax_usd_per_kg}
-            onChange={e => onParamsChange('carbon_tax_usd_per_kg', parseFloat(e.target.value))}
+            min={0} max={1000} step={10}
+            value={params.lambda_green || 465}
+            onChange={e => onParamsChange('lambda_green', parseFloat(e.target.value))}
+          />
+        </div>
+
+        {/* Shrinkage */}
+        <div className="input-group" style={{ marginBottom: 'var(--space-5)' }}>
+          <label style={{ color: 'rgba(255,255,255,0.85)', fontSize: 'var(--text-sm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Activity size={14} /> Asumsi Shrinkage (Air)
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', opacity: 0.7, marginBottom: 4 }}>
+            <span>10%</span>
+            <span style={{ fontWeight: 700, color: 'var(--color-accent-400)', fontSize: 'var(--text-sm)' }}>
+              {((params.shrinkage_rate_override || 0.18) * 100).toFixed(0)}%
+            </span>
+            <span>30%</span>
+          </div>
+          <input
+            type="range" className="slider"
+            min={0.10} max={0.30} step={0.01}
+            value={params.shrinkage_rate_override || 0.18}
+            onChange={e => onParamsChange('shrinkage_rate_override', parseFloat(e.target.value))}
           />
         </div>
 

@@ -7,8 +7,10 @@ import Sidebar from '../../components/layout/Sidebar'
 import SupplyChainMap from '../../components/map/SupplyChainMap'
 import CostBreakdown from '../../components/charts/CostBreakdown'
 import KpiMetrics from '../../components/charts/KpiMetrics'
+import CircularFlow from '../../components/charts/CircularFlow'
+import TransactionTable from '../../components/charts/TransactionTable'
 import toast from 'react-hot-toast'
-import { Map, BarChart2, Activity, AlertTriangle } from 'lucide-react'
+import { Map, BarChart2, Activity, AlertTriangle, Recycle, Table as TableIcon } from 'lucide-react'
 
 const DEFAULT_PARAMS = {
   carbon_tax_usd_per_kg: 0.03,
@@ -20,7 +22,7 @@ const DEFAULT_PARAMS = {
 }
 
 export default function AnalystDashboard() {
-  const [activeTab, setActiveTab]   = useState('map')
+  const [activeTab, setActiveTab]   = useState('circular')
   const [nodes, setNodes]           = useState(null)
   const [params, setParams]         = useState(DEFAULT_PARAMS)
   const [nodesError, setNodesError] = useState(null)
@@ -116,9 +118,11 @@ export default function AnalystDashboard() {
           {/* Tab Navigation */}
           <div className="tabs">
             {[
+              { key: 'circular', label: '♻️ Alur Sirkular',    icon: Recycle },
               { key: 'map',   label: '🗺️ Peta Spasial',     icon: Map },
-              { key: 'costs', label: '📦 Rincian Biaya',    icon: BarChart2 },
+              { key: 'costs', label: '📦 Rincian Biaya ABC',icon: BarChart2 },
               { key: 'kpi',   label: '📊 Metrik KPI',       icon: Activity },
+              { key: 'transactions', label: '📋 Transaksi', icon: TableIcon },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -132,6 +136,16 @@ export default function AnalystDashboard() {
 
           {/* Tab Content */}
           <div style={{ flex: 1, minHeight: 0 }}>
+            {activeTab === 'circular' && (
+              <div style={{ maxWidth: 800, margin: '0 auto' }}>
+                <CircularFlow />
+              </div>
+            )}
+
+            {activeTab === 'transactions' && (
+              <TransactionTable />
+            )}
+
             {activeTab === 'map' && (
               <div style={{ height: 'calc(100vh - 320px)', minHeight: 450 }}>
                 {nodes ? (
