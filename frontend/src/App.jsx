@@ -9,6 +9,7 @@ import CollectorPage    from './pages/collector/CollectorPage'
 import DriverPage       from './pages/driver/DriverPage'
 
 const ROLE_HOME = {
+  admin:     '/analyst',
   analyst:   '/analyst',
   farmer:    '/farmer',
   collector: '/collector',
@@ -54,9 +55,9 @@ function AppRoutes() {
       {/* Public */}
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
 
-      {/* Protected — Analyst (Government/Corporate) */}
+      {/* Protected — Analyst (Government/Corporate/Admin) */}
       <Route path="/analyst" element={
-        <ProtectedRoute allowedRoles={['analyst']}>
+        <ProtectedRoute allowedRoles={['analyst', 'admin']}>
           <AnalystDashboard />
         </ProtectedRoute>
       } />

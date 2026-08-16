@@ -7,14 +7,15 @@ const customApi = localStorage.getItem('custom_api_url')
 // Default fallback to Vercel API, or Vite proxy (empty string)
 // If customApi is set, use it. Otherwise, if Vercel, use /api. Otherwise empty string.
 const isVercel = window.location.hostname.includes('vercel.app')
-export const API_BASE = customApi ? customApi : (isVercel ? '/api' : '')
+export const API_BASE = customApi ? customApi : ''
 
 const client = axios.create({
   baseURL: API_BASE,
   timeout: 30000,
   headers: { 
     'Content-Type': 'application/json',
-    'Bypass-Tunnel-Reminder': 'true'
+    'Bypass-Tunnel-Reminder': 'true',
+    'ngrok-skip-browser-warning': 'true'
   },
 })
 
