@@ -40,8 +40,8 @@ class OptimizeRequest(BaseModel):
         description="Annual emission cap (ton CO2). Null = unconstrained.",
     )
     solver_name: str = Field(
-        default="cbc",
-        pattern="^(cbc|glpk|cplex|gurobi)$",
+        default="appsi_highs",
+        pattern="^(cbc|glpk|cplex|gurobi|appsi_highs|highs)$",
         description="MILP solver to use.",
     )
     time_limit_seconds: int = Field(

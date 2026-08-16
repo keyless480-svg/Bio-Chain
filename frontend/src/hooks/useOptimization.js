@@ -27,7 +27,10 @@ export function useOptimization() {
       setTaskId(res.data.task_id)
       setStatus('pending')
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message
+      let msg = err.response?.data?.detail || err.message
+      if (Array.isArray(msg)) {
+        msg = msg.map(e => e.msg).join(', ')
+      }
       setError(msg)
       setStatus('failed')
     }
