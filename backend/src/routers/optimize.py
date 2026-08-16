@@ -89,8 +89,8 @@ def start_optimization(
     farms = [
         NodeInfo(
             id=f.id,
-            lat=db.scalar(ST_Y(f.location)),
-            lon=db.scalar(ST_X(f.location)),
+            lat=f.latitude,
+            lon=f.longitude,
             capacity=0,
             supply=f.daily_supply_ton,
         )
@@ -99,8 +99,8 @@ def start_optimization(
     hubs = [
         NodeInfo(
             id=h.id,
-            lat=db.scalar(ST_Y(h.location)),
-            lon=db.scalar(ST_X(h.location)),
+            lat=h.latitude,
+            lon=h.longitude,
             capacity=h.max_capacity_ton_day,
             operating_cost=h.operating_cost_usd_day,
         )
@@ -109,8 +109,8 @@ def start_optimization(
     bios = [
         NodeInfo(
             id=b.id,
-            lat=db.scalar(ST_Y(b.location)),
-            lon=db.scalar(ST_X(b.location)),
+            lat=b.latitude,
+            lon=b.longitude,
             capacity=req.biorefinery_capacity_ton_day or b.max_capacity_ton_day,
         )
         for b in bios_db
