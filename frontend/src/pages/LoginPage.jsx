@@ -8,14 +8,14 @@ import { Leaf, Lock, User, Eye, EyeOff, Settings } from 'lucide-react'
 const ROLES = [
   { key: 'analyst',   icon: '📊', title: 'Analis / Pemerintah', desc: 'ESDM, Kementan, Investor', demo: { u: 'analis_esdm', p: 'biochain2026' } },
   { key: 'farmer',    icon: '🌽', title: 'Petani Jagung',        desc: 'Penjual tongkol jagung',  demo: { u: 'petani_tuban', p: 'jagung123' } },
-  { key: 'collector', icon: '🏭', title: 'Pengepul / KUD',       desc: 'Petugas Gudang KUD',      demo: { u: 'pengepul_kud', p: 'kud2026' } },
-  { key: 'driver',    icon: '🚛', title: 'Sopir Truk',           desc: 'Petugas Logistik',        demo: { u: 'sopir_truk', p: 'truk2026' } },
+  { key: 'collector', icon: '🏭', title: 'Pengepul / KUD',       desc: 'Petugas Gudang KUD',      demo: { u: 'pengepul_bangkalan', p: 'kud2026' } },
+  { key: 'driver',    icon: '🚛', title: 'Sopir Truk',           desc: 'Petugas Logistik',        demo: { u: 'sopir_01', p: 'truk2026' } },
 ]
 
 const ROLE_ROUTES = {
   analyst:   '/analyst',
   farmer:    '/farmer',
-  collector: '/collector',
+  hub:       '/collector',
   driver:    '/driver',
 }
 

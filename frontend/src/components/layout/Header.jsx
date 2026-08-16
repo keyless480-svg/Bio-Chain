@@ -3,17 +3,17 @@ import { useAuth } from '../../context/AuthContext'
 import { LogOut, Leaf, Bell } from 'lucide-react'
 
 const ROLE_LABELS = {
-  analyst:   'Analis Kebijakan',
-  farmer:    'Petani Jagung',
-  collector: 'Petugas KUD',
-  driver:    'Sopir Truk',
+  analyst: 'Analis Kebijakan',
+  farmer:  'Petani Jagung',
+  hub:     'Petugas KUD',
+  driver:  'Sopir Truk',
 }
 
 const ROLE_BADGE_CLASS = {
-  analyst:   'badge-green',
-  farmer:    'badge-brown',
-  collector: 'badge-yellow',
-  driver:    'badge-blue',
+  analyst: 'badge-green',
+  farmer:  'badge-brown',
+  hub:     'badge-yellow',
+  driver:  'badge-blue',
 }
 
 export default function Header({ title = 'BioChain-Opt' }) {

@@ -65,8 +65,8 @@ npm run dev   # http://localhost:5173
 |-------|----------|----------|
 | Analis / ESDM | `analis_esdm` | `biochain2026` |
 | Petani Jagung | `petani_tuban` | `jagung123` |
-| Pengepul KUD | `pengepul_kud` | `kud2026` |
-| Sopir Truk | `sopir_truk` | `truk2026` |
+| Pengepul KUD | `pengepul_bangkalan` | `kud2026` |
+| Sopir Truk | `sopir_01` | `truk2026` |
 
 ## Model MILP
 

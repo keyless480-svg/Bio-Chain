@@ -11,7 +11,7 @@ if not exist "backend\venv\Scripts\activate.bat" (
     echo [!] Virtual environment (venv) tidak ditemukan!
     echo [!] Sedang membuat venv dan menginstall dependencies secara otomatis...
     cd backend
-    python -m venv venv
+    py -m venv venv
     call venv\Scripts\activate
     pip install -r requirements.txt
     cd ..

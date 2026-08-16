@@ -12,7 +12,7 @@ const ROLE_HOME = {
   admin:     '/analyst',
   analyst:   '/analyst',
   farmer:    '/farmer',
-  collector: '/collector',
+  hub:       '/collector',
   driver:    '/driver',
 }
 
@@ -71,7 +71,7 @@ function AppRoutes() {
 
       {/* Protected — Collector (KUD) */}
       <Route path="/collector" element={
-        <ProtectedRoute allowedRoles={['collector']}>
+        <ProtectedRoute allowedRoles={['hub']}>
           <CollectorPage />
         </ProtectedRoute>
       } />
