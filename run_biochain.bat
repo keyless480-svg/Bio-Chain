@@ -48,7 +48,7 @@ exit /b 1
 start cmd /k "cd backend && call venv\Scripts\activate && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
 
 echo Menunggu Backend siap...
-timeout /t 5
+ping -n 6 127.0.0.1 >nul
 
 echo =======================================================
 echo MENGAKTIFKAN CLOUDFLARE TUNNEL (ONLINE ACCESS)
