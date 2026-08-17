@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     # Corn price
     corn_price_per_kg: float = 850.0         # Rp/kg (harga beli tongkol)
 
+    # CVRP / Lapis 2 — Vehicle Routing (Green-VRP + VRPTW)
+    avg_truck_speed_kmph: float = 40.0                 # Kecepatan rata-rata jalan kabupaten
+    degradation_rate_pct_per_hour: float = 0.4         # Kenaikan kadar air per jam tunggu (empiris)
+    time_window_early_penalty_per_min: float = 500.0   # IDR/menit datang kepagian
+    time_window_late_penalty_per_min: float = 1500.0   # IDR/menit datang kesorean
+    factory_sla_penalty_per_min: float = 5000.0        # IDR/menit — pelanggaran SLA kontraktual pabrik
+    factory_sla_deadline_minutes: int = 600            # batas waktu kedatangan ke pabrik (menit sejak start-of-day)
+    cvrp_solver_time_limit_seconds: int = 20
+    hub_window_open_min: int = 360                     # 06:00 — jam operasional default gudang pengepul
+    hub_window_close_min: int = 1080                    # 18:00
+
     # CORS
     cors_origins: list[str] = ["*"]
 

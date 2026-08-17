@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 
 from src.config import get_settings
 from src.database import init_db
-from src.routers import auth, nodes, optimize, results, transactions
+from src.routers import auth, nodes, optimize, results, transactions, fleet, stream
 from src.seed.seed_data import seed
 
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +57,8 @@ app.include_router(nodes.router)
 app.include_router(optimize.router)
 app.include_router(results.router)
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["transactions"])
+app.include_router(fleet.router)
+app.include_router(stream.router)
 
 
 @app.get("/health")
