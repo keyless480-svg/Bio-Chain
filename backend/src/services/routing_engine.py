@@ -16,8 +16,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional
 
-from ortools.constraint_solver import routing_enums_pb2, pywrapcp
-
 from src.services.spatial_service import road_distance_km
 from src.config import get_settings
 
@@ -91,6 +89,11 @@ def solve_daily_routes(
     solver tidak menemukan solusi feasible dalam batas waktu (mis. total
     demand melebihi total kapasitas armada tersedia).
     """
+    # Import lokal (bukan di top-level modul): ortools adalah dependency besar dan
+    # kegagalan impor di sini (mis. mismatch runtime C++) tidak boleh merobohkan
+    # seluruh aplikasi FastAPI - hanya rute CVRP ini yang gagal, sisanya tetap jalan.
+    from ortools.constraint_solver import routing_enums_pb2, pywrapcp
+
     settings = get_settings()
 
     if not demands or not fleet:
