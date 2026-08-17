@@ -11,6 +11,13 @@ const VEHICLE_TYPES = [
   { value: 'wingbox', label: 'Wingbox (20 ton)' },
 ]
 
+const STATUS_LABEL = {
+  recorded: '📥 Tercatat',
+  scheduled: '🚚 Dijadwalkan',
+  delivered: '✅ Terkirim',
+  verified: '✅ Terverifikasi',
+}
+
 export default function CollectorPage() {
   const { user, logout } = useAuth()
   const hubId = user?.hub_id || 1
@@ -41,7 +48,7 @@ export default function CollectorPage() {
       const res = await transactionApi.getHarvests()
       setRecords(res.data)
       // Calculate current ton from pending harvests
-      const totalKg = res.data.reduce((sum, r) => sum + r.weight_kg, 0)
+      const totalKg = res.data.reduce((sum, r) => sum + (r.gross_weight_kg || 0), 0)
       setWarehouse(prev => ({ ...prev, current_ton: totalKg / 1000 }))
       setLoading(false)
     } catch (err) {
@@ -102,20 +109,24 @@ export default function CollectorPage() {
     setDispatchLoading(true)
     toast('🔄 Menghitung rute optimal & mengirim FTL...', { icon: '⚙️' })
     try {
-      // Create a Hub Batch for all current ton
+      const today = new Date().toISOString().slice(0, 10)
       const inputKg = warehouse.current_ton * 1000
       const batchRes = await transactionApi.createHubBatch({
-        hub_id: user?.id || 1,
-        input_kg: inputKg,
-        shrinkage_pct: 0.18, // 18% shrinkage
+        hub_id: hubId,
+        total_input_kg: inputKg,
+        input_moisture_pct: 37.0,
+        num_farmers: records.length || 1,
+        batch_date: today,
       })
 
-      // Create a Shipment
       await transactionApi.createShipment({
-        hub_id: user?.id || 1,
-        biorefinery_id: 1, // Sentral factory
-        payload_ton: batchRes.data.output_kg / 1000,
-        distance_km: 85, // Dummy distance
+        hub_batch_id: batchRes.data.id,
+        hub_id: hubId,
+        factory_id: 1,
+        truck_plate: vehicles[0]?.plate_number || 'L 0000 XX',
+        payload_ton: batchRes.data.final_weight_kg / 1000,
+        distance_km: 85, // TODO: dari CVRP route, bukan angka tetap
+        shipment_date: today,
       })
 
       setDispatchLoading(false)
@@ -378,7 +389,7 @@ export default function CollectorPage() {
                     <th>Waktu</th>
                     <th>Petani (ID)</th>
                     <th style={{ textAlign: 'right' }}>Berat Masuk (kg)</th>
-                    <th style={{ textAlign: 'right' }}>Grade</th>
+                    <th style={{ textAlign: 'right' }}>Kadar Air</th>
                     <th style={{ textAlign: 'center' }}>Status</th>
                   </tr>
                 </thead>
@@ -390,13 +401,15 @@ export default function CollectorPage() {
                       </td>
                       <td style={{ fontWeight: 600 }}>Petani #{rec.farmer_id}</td>
                       <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-secondary-700)' }}>
-                        {rec.weight_kg.toLocaleString('id-ID')}
+                        {(rec.gross_weight_kg || 0).toLocaleString('id-ID')}
                       </td>
                       <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-primary-800)' }}>
-                        {rec.quality_grade}
+                        {rec.initial_moisture_pct != null ? `${rec.initial_moisture_pct}%` : '—'}
                       </td>
                       <td style={{ textAlign: 'center' }}>
-                        <span className="badge badge-green">✅ Diterima</span>
+                        <span className="badge badge-green">
+                          {STATUS_LABEL[rec.status] || rec.status}
+                        </span>
                       </td>
                     </tr>
                   ))}
