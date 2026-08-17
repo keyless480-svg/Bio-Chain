@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { Package, Truck, PlusCircle, CheckCircle, Bell, LogOut, Users, Droplets } from 'lucide-react'
+import { Package, Truck, PlusCircle, CheckCircle, Bell, LogOut, Users, Droplets, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { transactionApi } from '../../api/client'
+import { transactionApi, fleetApi } from '../../api/client'
+
+const VEHICLE_TYPES = [
+  { value: 'pickup', label: 'Pickup (1 ton)' },
+  { value: 'engkel', label: 'Engkel (5 ton)' },
+  { value: 'fuso', label: 'Fuso (8 ton)' },
+  { value: 'wingbox', label: 'Wingbox (20 ton)' },
+]
 
 export default function CollectorPage() {
   const { user, logout } = useAuth()
+  const hubId = user?.hub_id || 1
   const [warehouse, setWarehouse]   = useState({
     capacity_ton: 120,
     current_ton: 0,
@@ -15,9 +23,18 @@ export default function CollectorPage() {
   const [showModal, setShowModal]   = useState(false)
   const [truckDispatched, setTruckDispatched] = useState(false)
   const [truckEta, setTruckEta]     = useState(null)
-  
+
   const [loading, setLoading]       = useState(true)
   const [dispatchLoading, setDispatchLoading] = useState(false)
+
+  // ── Lapis 2: Armada & Rute (CVRP) ──
+  const [vehicles, setVehicles]       = useState([])
+  const [routes, setRoutes]           = useState([])
+  const [showVehicleForm, setShowVehicleForm] = useState(false)
+  const [registering, setRegistering] = useState(false)
+  const [vehicleForm, setVehicleForm] = useState({
+    vehicle_type: 'engkel', plate_number: '', capacity_ton: 5, fuel_rate_l_per_km: 0.18, fixed_charter_cost: 250000,
+  })
 
   const fetchHarvests = async () => {
     try {
@@ -34,8 +51,44 @@ export default function CollectorPage() {
     }
   }
 
+  const fetchVehicles = async () => {
+    try {
+      const res = await fleetApi.getVehicles({ hub_id: hubId })
+      setVehicles(res.data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const fetchRoutes = async () => {
+    try {
+      const res = await fleetApi.getRoutes({ hub_id: hubId })
+      setRoutes(res.data)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleRegisterVehicle = async (e) => {
+    e.preventDefault()
+    setRegistering(true)
+    try {
+      await fleetApi.registerVehicle({ ...vehicleForm, owner_hub_id: hubId })
+      toast.success('Armada terdaftar untuk penjemputan hari ini.')
+      setShowVehicleForm(false)
+      setVehicleForm({ vehicle_type: 'engkel', plate_number: '', capacity_ton: 5, fuel_rate_l_per_km: 0.18, fixed_charter_cost: 250000 })
+      fetchVehicles()
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Gagal mendaftarkan armada')
+    } finally {
+      setRegistering(false)
+    }
+  }
+
   useEffect(() => {
     fetchHarvests()
+    fetchVehicles()
+    fetchRoutes()
   }, [])
 
   const fillPct      = (warehouse.current_ton / warehouse.capacity_ton) * 100
@@ -203,6 +256,107 @@ export default function CollectorPage() {
               <><Truck size={22} /> KONSOLIDASI & KIRIM (FTL)</>
             )}
           </button>
+        </div>
+
+        {/* Armada — raw input untuk Lapis 2 CVRP */}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: 'var(--space-4) var(--space-6)', background: 'var(--color-gray-50)', borderBottom: '1px solid var(--color-gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Truck size={18} /> Armada Tersedia Hari Ini
+            </h3>
+            <button className="btn btn-ghost" style={{ fontSize: 'var(--text-sm)' }} onClick={() => setShowVehicleForm(v => !v)}>
+              <PlusCircle size={16} /> {showVehicleForm ? 'Batal' : 'Daftarkan Armada'}
+            </button>
+          </div>
+
+          {showVehicleForm && (
+            <form onSubmit={handleRegisterVehicle} style={{ padding: 'var(--space-4) var(--space-6)', borderBottom: '1px solid var(--color-gray-200)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-3)' }}>
+              <div className="input-group">
+                <label className="input-label">Tipe Armada</label>
+                <select className="input" value={vehicleForm.vehicle_type} onChange={e => setVehicleForm({ ...vehicleForm, vehicle_type: e.target.value })}>
+                  {VEHICLE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="input-group">
+                <label className="input-label">Plat Nomor</label>
+                <input className="input" required placeholder="L 1234 XX" value={vehicleForm.plate_number}
+                  onChange={e => setVehicleForm({ ...vehicleForm, plate_number: e.target.value })} />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Kapasitas (ton)</label>
+                <input className="input" type="number" min="0.1" step="0.1" required value={vehicleForm.capacity_ton}
+                  onChange={e => setVehicleForm({ ...vehicleForm, capacity_ton: parseFloat(e.target.value) })} />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Konsumsi BBM (liter/km)</label>
+                <input className="input" type="number" min="0.01" step="0.01" required value={vehicleForm.fuel_rate_l_per_km}
+                  onChange={e => setVehicleForm({ ...vehicleForm, fuel_rate_l_per_km: parseFloat(e.target.value) })} />
+              </div>
+              <div className="input-group">
+                <label className="input-label">Tarif Borongan (Rp/trip)</label>
+                <input className="input" type="number" min="0" step="1000" required value={vehicleForm.fixed_charter_cost}
+                  onChange={e => setVehicleForm({ ...vehicleForm, fixed_charter_cost: parseFloat(e.target.value) })} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <button className="btn btn-lg" type="submit" disabled={registering} style={{ width: '100%' }}>
+                  {registering ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead><tr><th>Plat Nomor</th><th>Tipe</th><th style={{ textAlign: 'right' }}>Kapasitas</th><th style={{ textAlign: 'center' }}>Status</th></tr></thead>
+              <tbody>
+                {vehicles.map(v => (
+                  <tr key={v.id}>
+                    <td style={{ fontWeight: 600 }}>{v.plate_number}</td>
+                    <td>{VEHICLE_TYPES.find(t => t.value === v.vehicle_type)?.label || v.vehicle_type}</td>
+                    <td style={{ textAlign: 'right' }}>{v.capacity_ton} ton</td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className={`badge ${v.is_available_today ? 'badge-green' : ''}`}>
+                        {v.is_available_today ? 'Siap' : 'Tidak tersedia'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {vehicles.length === 0 && (
+                  <tr><td colSpan={4} style={{ textAlign: 'center', padding: 20 }}>Belum ada armada terdaftar.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Rute hasil Lapis 2 CVRP — dijadwalkan otomatis setelah Analis menjalankan optimasi */}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: 'var(--space-4) var(--space-6)', background: 'var(--color-gray-50)', borderBottom: '1px solid var(--color-gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-gray-800)', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <MapPin size={18} /> Rute Penjemputan (CVRP)
+            </h3>
+            <span className="badge badge-green">{routes.length} rute</span>
+          </div>
+          {routes.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 20, color: 'var(--color-gray-500)' }}>
+              Belum ada rute terjadwal. Rute dibuat otomatis setelah Analis menjalankan optimasi harian.
+            </div>
+          ) : (
+            <div style={{ padding: 'var(--space-4) var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {routes.map(r => (
+                <div key={r.id} style={{ border: '1px solid var(--color-gray-200)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
+                    <span>🚚 Kendaraan #{r.vehicle_id} — {r.stops.length} titik jemput</span>
+                    <span>Rp {r.total_route_cost.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-gray-500)', marginTop: 4 }}>
+                    {r.total_distance_km} km · BBM Rp {r.total_fuel_cost.toLocaleString('id-ID')} · Pajak karbon Rp {r.total_carbon_tax.toLocaleString('id-ID')}
+                    {r.total_time_window_penalty > 0 && <> · Penalti jadwal Rp {r.total_time_window_penalty.toLocaleString('id-ID')}</>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Incoming Records Table */}

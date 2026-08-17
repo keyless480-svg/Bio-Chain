@@ -76,4 +76,11 @@ export const transactionApi = {
   getDailySummary: () => client.get('/api/v1/transactions/daily-summary'),
 }
 
+export const fleetApi = {
+  registerVehicle: (data) => client.post('/api/v1/fleet/vehicles', data),
+  getVehicles: (params) => client.get('/api/v1/fleet/vehicles', { params }),
+  getRoutes: (params) => client.get('/api/v1/fleet/routes', { params }),
+  getRoute: (routeId) => client.get(`/api/v1/fleet/routes/${routeId}`),
+}
+
 export default client

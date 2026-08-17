@@ -35,5 +35,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str]
     kabupaten: Optional[str]
     is_active: bool
+    farmer_id: Optional[int] = None
+    hub_id: Optional[int] = None
 
     model_config = {"from_attributes": True}

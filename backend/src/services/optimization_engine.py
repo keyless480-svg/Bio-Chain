@@ -78,6 +78,11 @@ class OptimizationInput:
     emission_limit_ton_co2: Optional[float] = None
     solver_name: str = "appsi_highs"
     time_limit_seconds: int = 300
+    # Variabel tambahan #2 (lihat blueprint arsitektur): degradasi mutu sebagai
+    # fungsi waktu tempuh, bukan shrinkage_rate konstan. Estimasi waktu tempuh di
+    # Lapis 1 dipakai sebagai proxy (belum ada urutan rute konkret — itu Lapis 2).
+    degradation_rate_pct_per_hour: float = 0.4
+    avg_truck_speed_kmph: float = 40.0
 
 
 @dataclass
@@ -111,6 +116,7 @@ class OptimizationResult:
     factory_cost_year: float = 0.0       # Step 4: processing + depreciation
     green_penalty_year: float = 0.0      # Pajak karbon
     resilience_penalty_year: float = 0.0  # Penalti risiko
+    degradation_penalty_year: float = 0.0  # Variabel #2: susut mutu akibat waktu tempuh
     # KPI
     total_emission_ton_co2_year: float = 0.0
     total_corncob_ton_day: float = 0.0
@@ -213,8 +219,24 @@ def run_optimization(inp: OptimizationInput) -> OptimizationResult:
             resilience_penalty = inp.gamma_resilience * sum(
                 hub_map[j].supply_variability * m.z[j] for j in m.H
             )
+            # Degradation Penalty (Variabel #2): waktu tempuh (proxy jarak/kecepatan) ×
+            # laju kenaikan kadar air × nilai muatan. Farm→Hub pakai harga beli petani;
+            # Hub→Factory pakai harga pasar bonggol kering (dianggap sama, 850/kg).
+            degradation_penalty = (inp.degradation_rate_pct_per_hour / 100.0) * (
+                sum(
+                    (dist_fh[(i, j)] / inp.avg_truck_speed_kmph) * m.x[i, j]
+                    * farm_map[i].price_per_ton * DAYS_PER_YEAR
+                    for i in m.F for j in m.H
+                )
+                + sum(
+                    (dist_hf[(j, k)] / inp.avg_truck_speed_kmph) * m.y[j, k]
+                    * 850000.0 * DAYS_PER_YEAR
+                    for j in m.H for k in m.K
+                )
+            )
             return (hulu_cost + transport_fh + hub_handling + shrinkage_cost
-                    + transport_hf + factory_cost + green_penalty + resilience_penalty)
+                    + transport_hf + factory_cost + green_penalty + resilience_penalty
+                    + degradation_penalty)
 
         model.OBJ = pyo.Objective(rule=objective_rule, sense=pyo.minimize)
 
@@ -338,6 +360,18 @@ def run_optimization(inp: OptimizationInput) -> OptimizationResult:
         resilience_penalty = inp.gamma_resilience * sum(
             hub_map[j].supply_variability * pyo.value(model.z[j]) for j in H
         )
+        degradation_penalty = (inp.degradation_rate_pct_per_hour / 100.0) * (
+            sum(
+                (dist_fh[(i, j)] / inp.avg_truck_speed_kmph) * pyo.value(model.x[i, j])
+                * farm_map[i].price_per_ton * DAYS_PER_YEAR
+                for i in F for j in H
+            )
+            + sum(
+                (dist_hf[(j, k)] / inp.avg_truck_speed_kmph) * pyo.value(model.y[j, k])
+                * 850000.0 * DAYS_PER_YEAR
+                for j in H for k in K
+            )
+        )
         tac = pyo.value(model.OBJ)
 
         # Emissions
@@ -408,6 +442,7 @@ def run_optimization(inp: OptimizationInput) -> OptimizationResult:
             factory_cost_year=round(factory_cost, 0),
             green_penalty_year=round(green_penalty, 0),
             resilience_penalty_year=round(resilience_penalty, 0),
+            degradation_penalty_year=round(degradation_penalty, 0),
             total_emission_ton_co2_year=round(total_emission_kg / 1000, 4),
             total_corncob_ton_day=round(total_inflow, 4),
             total_corncob_after_shrinkage=round(total_to_factory, 4),
