@@ -13,8 +13,8 @@ GeoAlchemy2 = "==0.15.1"
 python-jose = {extras = ["cryptography"], version = "==3.3.0"}
 passlib = {extras = ["bcrypt"], version = "==1.7.4"}
 bcrypt = "==3.2.2"
-pydantic = "==2.7.4"
-pydantic-settings = "==2.3.3"
+pydantic = "==2.13.4"
+pydantic-settings = "==2.15.0"
 email-validator = "==2.2.0"
 pyomo = "==6.7.3"
 highspy = "==1.15.1"
@@ -25,4 +25,4 @@ python-dotenv = "==1.0.1"
 pg8000 = "==1.31.5"
 
 [requires]
-python_version = "3.9"
+python_version = "3.12"
