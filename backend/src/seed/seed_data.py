@@ -17,7 +17,6 @@ from passlib.context import CryptContext
 from src.database import engine, init_db
 from src.models.spatial import Farmer, Hub, Factory, User
 from src.models.transactions import Harvest, HubBatch, Shipment, FactoryHppLog, CircularityLog
-from src.models.fleet import Vehicle
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -285,49 +284,11 @@ USERS_DATA = [
 ]
 
 
-# ═══════════════════════════════════════════
-# ARMADA: 2 kendaraan per hub (10 total) — raw input demo untuk Lapis 2 CVRP
-# ═══════════════════════════════════════════
-VEHICLE_DATA = [
-    {"hub_id": 1, "vehicle_type": "engkel", "plate_number": "L 1001 KD", "capacity_ton": 5.0, "fuel_rate_l_per_km": 0.18, "fixed_charter_cost": 250000.0},
-    {"hub_id": 1, "vehicle_type": "fuso", "plate_number": "L 1002 KD", "capacity_ton": 8.0, "fuel_rate_l_per_km": 0.28, "fixed_charter_cost": 400000.0},
-    {"hub_id": 2, "vehicle_type": "engkel", "plate_number": "L 2001 KD", "capacity_ton": 5.0, "fuel_rate_l_per_km": 0.18, "fixed_charter_cost": 250000.0},
-    {"hub_id": 2, "vehicle_type": "wingbox", "plate_number": "L 2002 KD", "capacity_ton": 20.0, "fuel_rate_l_per_km": 0.35, "fixed_charter_cost": 700000.0},
-    {"hub_id": 3, "vehicle_type": "engkel", "plate_number": "L 3001 KD", "capacity_ton": 5.0, "fuel_rate_l_per_km": 0.18, "fixed_charter_cost": 250000.0},
-    {"hub_id": 3, "vehicle_type": "fuso", "plate_number": "L 3002 KD", "capacity_ton": 8.0, "fuel_rate_l_per_km": 0.28, "fixed_charter_cost": 400000.0},
-    {"hub_id": 4, "vehicle_type": "pickup", "plate_number": "L 4001 KD", "capacity_ton": 1.0, "fuel_rate_l_per_km": 0.10, "fixed_charter_cost": 120000.0},
-    {"hub_id": 4, "vehicle_type": "engkel", "plate_number": "L 4002 KD", "capacity_ton": 5.0, "fuel_rate_l_per_km": 0.18, "fixed_charter_cost": 250000.0},
-    {"hub_id": 5, "vehicle_type": "engkel", "plate_number": "L 5001 KD", "capacity_ton": 5.0, "fuel_rate_l_per_km": 0.18, "fixed_charter_cost": 250000.0},
-    {"hub_id": 5, "vehicle_type": "fuso", "plate_number": "L 5002 KD", "capacity_ton": 8.0, "fuel_rate_l_per_km": 0.28, "fixed_charter_cost": 400000.0},
-]
-
-
-def _seed_vehicles_if_needed(db: Session) -> None:
-    """Independen dari guard seed() utama — supaya DB yang sudah pernah di-seed
-    (mis. Supabase produksi) tetap mendapat data armada demo setelah redeploy."""
-    if db.query(Vehicle).count() > 0:
-        return
-    print("[Fleet] Seeding 10 demo Vehicle (2 per hub)...")
-    for data in VEHICLE_DATA:
-        db.add(Vehicle(
-            owner_hub_id=data["hub_id"],
-            vehicle_type=data["vehicle_type"],
-            plate_number=data["plate_number"],
-            capacity_ton=data["capacity_ton"],
-            fuel_rate_l_per_km=data["fuel_rate_l_per_km"],
-            fixed_charter_cost=data["fixed_charter_cost"],
-            is_available_today=True,
-        ))
-    db.commit()
-
-
 def seed() -> None:
     """Insert all seed data into the database."""
     init_db()
 
     with Session(engine) as db:
-        _seed_vehicles_if_needed(db)
-
         # Check if already seeded
         if db.query(Farmer).count() > 0:
             print("[OK] Database already seeded. Skipping.")

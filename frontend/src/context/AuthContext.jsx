@@ -25,17 +25,8 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     const res = await authApi.login(username, password)
     const { access_token, role, full_name, kabupaten } = res.data
+    const userData = { username, role, full_name, kabupaten }
     localStorage.setItem('biochain_token', access_token)
-
-    // access_token must be in localStorage before authApi.me() attaches it as a header
-    let userData = { username, role, full_name, kabupaten }
-    try {
-      const me = await authApi.me()
-      userData = { ...userData, id: me.data.id, hub_id: me.data.hub_id, farmer_id: me.data.farmer_id }
-    } catch {
-      // Non-fatal — pages that need hub_id/farmer_id will just fall back gracefully
-    }
-
     localStorage.setItem('biochain_user', JSON.stringify(userData))
     setUser(userData)
     return userData

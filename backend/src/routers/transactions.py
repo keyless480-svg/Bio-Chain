@@ -20,7 +20,6 @@ from src.schemas.transactions import (
     CircularityCreate, CircularityResponse
 )
 from src.services.spatial_service import full_transport_breakdown, check_truck_utilization
-from src.services.ledger_service import append_ledger_entry
 
 router = APIRouter()
 
@@ -54,13 +53,6 @@ def create_harvest(harvest: HarvestCreate, db: Session = Depends(get_db)):
         geo_long=farmer.longitude
     )
     db.add(new_harvest)
-    db.flush()
-    append_ledger_entry(db, "harvest", new_harvest.id, "created", {
-        "farmer_id": new_harvest.farmer_id,
-        "gross_weight_kg": new_harvest.gross_weight_kg,
-        "total_payment": new_harvest.total_payment,
-        "harvest_date": str(new_harvest.harvest_date),
-    })
     db.commit()
     db.refresh(new_harvest)
     return new_harvest
@@ -110,13 +102,6 @@ def create_hub_batch(batch: HubBatchCreate, db: Session = Depends(get_db)):
         notes=batch.notes
     )
     db.add(new_batch)
-    db.flush()
-    append_ledger_entry(db, "hub_batch", new_batch.id, "created", {
-        "hub_id": new_batch.hub_id,
-        "batch_code": new_batch.batch_code,
-        "total_input_kg": new_batch.total_input_kg,
-        "final_weight_kg": new_batch.final_weight_kg,
-    })
     db.commit()
     db.refresh(new_batch)
     return new_batch
@@ -159,13 +144,6 @@ def create_shipment(shipment: ShipmentCreate, db: Session = Depends(get_db)):
         notes=shipment.notes
     )
     db.add(new_shipment)
-    db.flush()
-    append_ledger_entry(db, "shipment", new_shipment.id, "created", {
-        "hub_id": new_shipment.hub_id,
-        "factory_id": new_shipment.factory_id,
-        "payload_ton": new_shipment.payload_ton,
-        "carbon_tax_cost": new_shipment.carbon_tax_cost,
-    })
     db.commit()
     db.refresh(new_shipment)
     return new_shipment
